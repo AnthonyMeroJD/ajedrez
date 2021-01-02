@@ -10,11 +10,17 @@ function Square (props) {
         const nonSelected=<button className="square"onClick={props.onClick}>
         {props.value}  
         </button>;
+
         const select=
         <button className="square select"onClick={props.onClick}>
         {props.value}  
         </button>;
-        const component=props.isSelected?select:nonSelected;
+
+        const posibleMov=<button className="square posible"onClick={props.onClick}>
+        {props.value}  
+        </button>;
+
+        const component=props.isSelected?select:props.posible?posibleMov:nonSelected;
     return (
     component    
     )
@@ -35,12 +41,13 @@ class Board extends React.Component {
     
   }
 
-  renderSquare(key,value,x,y,isSelected) {    
+  renderSquare(key,value,x,y,isSelected,posible) {    
     return <Square
       key={key}
       value={value}
       onClick={()=>this.props.onClick(x,y)}
       isSelected={isSelected}
+      posible={posible}
       />;
   }
   
@@ -53,12 +60,22 @@ class Board extends React.Component {
       const columna=fila;      
       const columnaComponent=columna.map((e,y)=>{        
         const key=generador.next().value;
-        const isSelectedThisFicha=index===this.props.currentFicha.posX &&
-                                   y===this.props.currentFicha.posY &&
-                                       this.props.currentFicha.ficha;
-        if (isSelectedThisFicha) {
-          console.log('s');
+        const currentFicha=this.props.currentFicha;
+        const isSelectedThisFicha=index===currentFicha.posX &&
+                                   y===currentFicha.posY &&
+                                       currentFicha.ficha;        
+        const posiblesMov=currentFicha.posibleMov;
+        
+        
+        if (isSelectedThisFicha) {          
           return this.renderSquare(key,e,index,y,true)  
+        }        
+          
+        if (posiblesMov) {
+          const currrentPosibleMov=posiblesMov.filter((e,i)=>e.x===index&&e.y===y);         
+          if (currrentPosibleMov[0] ) {            
+            return this.renderSquare(key,e,index,y,false,true)  
+          }          
         }
         return this.renderSquare(key,e,index,y,false)        
       });
@@ -85,8 +102,8 @@ class Game extends React.Component {
      this.state={
        boardsHistory:[{board:board},],
        currentGame:0,       
-       currentFicha:{ficha:null,posX:0,posY:0},
-      
+       currentFicha:{ficha:null,
+                    posX:0,posY:0},       
      }
      
   }
@@ -127,30 +144,35 @@ class Game extends React.Component {
     if (isFirstPickEmpySpace) {
       return;
     } 
-    else if (ficha) {            
-      this.setState({currentFicha:{ficha:ficha,posX:x,posY:y}});              
+    else if (ficha) {    
+      const posibleMov=this.legalMoves(ficha,x,y);     
+      console.log(posibleMov);   
+      this.setState({currentFicha:{
+        ficha:ficha,
+        posX:x,posY:y,
+        posibleMov:posibleMov
+      }});         
     } else if (!ficha && currentFicha) {        
       this.moveFichaTo(x,y,this.state.currentFicha);
       this.setState({currentFicha:{ficha:null,posX:0,posY:0}})
     } 
   }
 
-  isLegalThisMove(ficha){
-    switch (ficha) {
-      case 'p':
-
-
-
-        break;
-
-      case 'P':
-        
-        break;
-    
-      default:
-        break;
-    }
-
+  isLegalThisMove(){
+    const currrentFicha=this.state.currentFicha
+  }
+  
+  legalMoves(ficha,x,y){
+    const posibleMov=[];          
+    const isFichaBlack=ficha===ficha.toUpperCase();
+    const isPeon=ficha.toLowerCase()==='p';    
+    if (isFichaBlack && isPeon) {      
+     const legalMoves= posibleMov.concat([{x:x-1,y:y}]);  
+      return legalMoves;	
+    }else{      
+      const legalMoves=  posibleMov.concat([{x:x+1,y:y}]);
+      return legalMoves;	
+    }    
   }
 
    moveFichaTo(x,y,{ficha,posX,posY}){
